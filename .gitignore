@@ -1,0 +1,7 @@
+rag_venv/
+chroma_db/
+chroma_db1/
+chroma_db2/
+__pycache__/
+.env
+data/*.pdf
