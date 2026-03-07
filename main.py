@@ -1,35 +1,18 @@
 from fastapi import FastAPI , Response
-from pydantic import Field , ConfigDict , BaseModel
-from query import user_query
-
-
+from routers.upload import router as upload_router
+from routers.ask import router as ask_router
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 app =FastAPI()
 
-#Models
+app.include_router(ask_router)
+app.include_router(upload_router)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
-class Prompt_Base(BaseModel):
-    user_prompt : str = Field(min_length=1)
-
-#End-points
-@app.post('/')
-def user_prompts(data:Prompt_Base):
-    results = user_query(data.user_prompt)
-    return {"answer": results}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
