@@ -1,19 +1,21 @@
 # RAG PDF Chatbot
 
-A Retrieval-Augmented Generation (RAG) system that answers questions from any PDF document using a local LLM. Built with FastAPI, ChromaDB, and KoboldCpp.
+A Retrieval-Augmented Generation (RAG) system that answers questions from any PDF document. Upload a PDF, ask a question, get an answer grounded in your document — no hallucinations, no guessing.
+
+Built with FastAPI · ChromaDB · Gemini API · Python
 
 ---
 
-## What It Does
+## How It Works
 
-You give it a PDF. You ask it a question. It finds the answer — grounded in your actual document, no hallucinations, no guessing.
+1. **Upload** — Drop any PDF into the interface. The system extracts and chunks the text, then stores it as vector embeddings in ChromaDB.
+2. **Ask** — Type any question about the document.
+3. **Answer** — ChromaDB retrieves the most relevant chunks semantically, and Gemini generates an accurate, grounded answer.
 
-Instead of feeding an entire document to an LLM (which is slow and expensive), this system:
-1. Breaks the PDF into small chunks
-2. Stores those chunks in a vector database (ChromaDB)
-3. When you ask a question, it finds the most relevant chunks using semantic search
-4. Passes only those chunks to the LLM as context
-5. Returns a focused, accurate answer
+```
+PDF → Text Extraction (PyPDF) → Chunking → ChromaDB (Vector Store)
+Question → Semantic Search → Relevant Chunks → Gemini API → Answer
+```
 
 ---
 
@@ -21,136 +23,87 @@ Instead of feeding an entire document to an LLM (which is slow and expensive), t
 
 | Layer | Technology |
 |-------|-----------|
-| API | FastAPI |
-| Vector Database | ChromaDB (persistent, local) |
+| Backend | FastAPI |
+| Vector Database | ChromaDB |
+| LLM | Google Gemini API |
 | PDF Parsing | PyPDF |
-| LLM | KoboldCpp (local, OpenAI-compatible endpoint) |
-| Validation | Pydantic |
+| Frontend | HTML · CSS · JavaScript |
 
 ---
 
 ## Project Structure
 
 ```
-RAG/
-├── ingest.py       # Read PDF, chunk text, store in ChromaDB (run once)
-├── query.py        # Search ChromaDB + call local LLM
-├── local_llm.py    # ask_kobold() — sends prompt to KoboldCpp
-├── main.py         # FastAPI app with POST endpoint
-├── data/
-│   └── your_file.pdf
-└── chroma_db/      # Persistent vector store (auto-generated)
+RAG-PDF-Chatbot/
+├── main.py                 # FastAPI app, routing, static files
+├── requirements.txt        # Dependencies
+├── routers/
+│   ├── upload.py           # PDF upload + chunking + ChromaDB storage
+│   ├── ask.py              # Semantic search + LLM query
+│   └── llm_response.py     # Gemini API call
+└── static/
+    └── index.html          # Frontend UI
 ```
 
 ---
 
-## Requirements
+## Getting Started
 
-- Python 3.11 (ChromaDB is not compatible with Python 3.12+)
-- [KoboldCpp](https://github.com/LostRuins/koboldcpp) running locally on port `5001`
-- A PDF file to query
-
----
-
-## Setup
-
-**1. Clone the repo**
+### 1. Clone the repo
 ```bash
-git clone https://github.com/your-username/rag-pdf-chatbot
-cd rag-pdf-chatbot
+git clone https://github.com/kamalijk007/RAG-PDF-Chatbot.git
+cd RAG-PDF-Chatbot
 ```
 
-**2. Create a Python 3.11 virtual environment**
+### 2. Create a virtual environment (Python 3.11 recommended)
 ```bash
-py -3.11 -m venv rag_venv
-rag_venv\Scripts\activate      # Windows
-# source rag_venv/bin/activate  # Linux/Mac
+py -3.11 -m venv venv
+venv\Scripts\activate
 ```
 
-**3. Install dependencies**
+### 3. Install dependencies
 ```bash
-pip install fastapi uvicorn pypdf chromadb requests
+pip install -r requirements.txt
 ```
 
-**4. Add your PDF**
-
-Place your PDF inside the `data/` folder and update the filename in `ingest.py`:
-```python
-reader = pypdf.PdfReader('data/your_file.pdf')
+### 4. Set up your API key
+Create a `.env` file in the root directory:
 ```
-
-**5. Run the ingestion script** (once per document)
-```bash
-python ingest.py
+API_KEY=your_gemini_api_key_here
 ```
+Get your free Gemini API key at [aistudio.google.com](https://aistudio.google.com)
 
-This reads your PDF, splits it into 300-character chunks, and stores them in ChromaDB.
-
-**6. Start KoboldCpp**
-
-Make sure KoboldCpp is running locally with a model loaded. It should be accessible at:
-```
-http://127.0.0.1:5001/v1/chat/completions
-```
-
-**7. Start the FastAPI server**
+### 5. Run the app
 ```bash
 uvicorn main:app --reload
 ```
 
----
-
-## Usage
-
-### Via Swagger UI
-Open your browser at `http://127.0.0.1:8000/docs` and use the interactive API docs.
-
-### Via curl
-```bash
-curl -X POST "http://127.0.0.1:8000/" \
-  -H "Content-Type: application/json" \
-  -d '{"user_prompt": "What is the main topic of the document?"}'
+### 6. Open in browser
 ```
-
-### Example Response
-```json
-{
-  "answer": "Based on the document, the main topic is..."
-}
+http://localhost:8000
 ```
 
 ---
 
-## How It Works (Pipeline)
+## API Endpoints
 
-```
-PDF File
-   ↓
-PyPDF (text extraction)
-   ↓
-Chunking (300 chars per chunk)
-   ↓
-ChromaDB (vector storage + semantic search)
-   ↓
-Top 4 relevant chunks retrieved
-   ↓
-KoboldCpp LLM (answer generation)
-   ↓
-FastAPI response
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/upload` | Upload a PDF and store chunks in ChromaDB |
+| POST | `/ask` | Ask a question, get an answer from the document |
+| GET | `/docs` | Swagger UI — interactive API documentation |
 
 ---
 
 ## Notes
 
-- **Chunk size:** Currently set to 300 characters. Smaller chunks improve precision for specific facts. Larger chunks give more context for broad questions.
-- **n_results:** Currently retrieves top 4 chunks. Increase for broader coverage, decrease to reduce noise.
-- **Stale data:** If you update your PDF, delete the `chroma_db/` folder and re-run `ingest.py` to rebuild the index.
-- **Local LLM:** This project uses KoboldCpp for fully local, private inference. No data is sent to external APIs.
+- Delete the `chroma_db/` folder before re-uploading a new PDF to avoid stale data
+- Python 3.11 recommended — newer versions may cause ChromaDB compatibility issues
+- Gemini API free tier is sufficient for testing and portfolio use
 
 ---
 
-## Built By
+## Author
 
-Kamal Khan — Backend & AI Engineer  
-[linkedin.com/in/kamal-khan-ai](https://linkedin.com/in/kamal-khan-ai)
+**Kamal Khan** — Backend & AI Engineer  
+[linkedin.com/in/kamal-khan-ai](https://linkedin.com/in/kamal-khan-ai) · [github.com/kamalijk007](https://github.com/kamalijk007)
