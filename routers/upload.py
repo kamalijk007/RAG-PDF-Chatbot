@@ -20,7 +20,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         chunks.append(full_text[i:i+150])
     
     # Store in ChromaDB
-    client = chromadb.PersistentClient(path="./chroma_db")
+    client = client = chromadb.EphemeralClient()
     collection = client.get_or_create_collection("docs")
     collection.add(
         documents=chunks,

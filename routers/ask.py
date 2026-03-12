@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.post("/ask")
 def user_query(data: user_question):
-    client = chromadb.PersistentClient(path="./chroma_db")
+    client = client = chromadb.EphemeralClient()
     collection = client.get_or_create_collection("docs")
     results = collection.query(query_texts=[data.question], n_results=8)
     context = " ".join(results['documents'][0])
