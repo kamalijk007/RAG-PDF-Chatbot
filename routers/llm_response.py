@@ -8,6 +8,9 @@ load_dotenv()
 
 api_key = os.getenv("API_KEY")
 client = genai.Client(api_key=api_key)
+print("Available models:")
+for model in client.models.list():
+    print(f"- {model.name}")
 
 def ask_gemini(question: str, context: str) -> str:
     print(f"DEBUG: API Key was found: {api_key is not None}")
