@@ -2,6 +2,7 @@ import pypdf
 import chromadb
 from fastapi import APIRouter, UploadFile, File
 import io
+from routers.db import collection
 
 router = APIRouter()
 
@@ -20,8 +21,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         chunks.append(full_text[i:i+150])
     
     # Store in ChromaDB
-    client = client = chromadb.EphemeralClient()
-    collection = client.get_or_create_collection("docs")
+
     collection.add(
         documents=chunks,
         ids=[f"chunk_{i}" for i in range(len(chunks))]
