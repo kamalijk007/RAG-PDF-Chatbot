@@ -15,7 +15,7 @@ def ask_gemini(question: str, context: str) -> str:
     prompt = f"Answer the question based on this context:\n\n{context}\n\nQuestion: {question}"
     
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="models/gemini-1.5-flash",
         contents=prompt
     )
     return response.text
